@@ -88,6 +88,14 @@ interface DiffCharsOptions extends CommonDiffOptions {
    * @default false
    */
   ignoreCase?: boolean;
+  /**
+   * An optional [`Intl.Segmenter`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Segmenter) object (which must have a `granularity` of `'grapheme'`) for `diffChars` to use to split the text into grapheme clusters instead of individual Unicode code points.
+   *
+   * This is particularly useful for languages like Thai where a single visual character (grapheme cluster) can consist of multiple Unicode code points — for example, a base consonant plus vowel and tone-mark diacritics. Without this option, `diffChars` would treat each code point as a separate token, which can split Thai syllables and produce broken highlighting when visualising the diff in HTML.
+   *
+   * Note that this is (deliberately) incorrectly typed as `any` to avoid users whose `lib` & `target` settings in tsconfig.json are older than es2022 getting type errors when they build about `Intl.Segmenter` not existing.
+   */
+  intlSegmenter?: any;
 }
 export interface DiffCharsOptionsNonabortable extends DiffCharsOptions {
   /**

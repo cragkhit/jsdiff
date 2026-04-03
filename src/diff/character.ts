@@ -1,7 +1,18 @@
 import Diff from './base.js';
 import type { ChangeObject, CallbackOptionAbortable, CallbackOptionNonabortable, DiffCallbackNonabortable, DiffCharsOptionsAbortable, DiffCharsOptionsNonabortable} from '../types.js';
 
-class CharacterDiff extends Diff<string, string> {}
+class CharacterDiff extends Diff<string, string> {
+  tokenize(value: string, options: DiffCharsOptionsNonabortable | DiffCharsOptionsAbortable = {}) {
+    if (options.intlSegmenter) {
+      const segmenter: Intl.Segmenter = options.intlSegmenter;
+      if (segmenter.resolvedOptions().granularity !== 'grapheme') {
+        throw new Error('The segmenter passed to diffChars must have a granularity of "grapheme"');
+      }
+      return Array.from(segmenter.segment(value), s => s.segment);
+    }
+    return Array.from(value);
+  }
+}
 
 export const characterDiff = new CharacterDiff();
 
