@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>jsdiff Demo</title>
+  <script src="../dist/diff.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      padding: 2rem;
+    }
+
+    h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+    p.subtitle { color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+    .inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    label { display: block; font-weight: 600; margin-bottom: 0.4rem; font-size: 0.9rem; }
+
+    textarea {
+      width: 100%;
+      height: 160px;
+      padding: 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      resize: vertical;
+      background: #fff;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    select, button {
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    button {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
+      font-weight: 600;
+    }
+    button:hover { background: #1d4ed8; }
+
+    .result-box {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 1rem;
+      min-height: 100px;
+    }
+
+    .result-box h2 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    #output {
+      font-family: monospace;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.6;
+    }
+
+    .added    { background: #bbf7d0; color: #166534; border-radius: 2px; }
+    .removed  { background: #fecaca; color: #991b1b; text-decoration: line-through; border-radius: 2px; }
+    .unchanged{ color: #555; }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.8rem;
+      margin-bottom: 0.75rem;
+    }
+    .legend span { display: flex; align-items: center; gap: 0.3rem; }
+    .dot { width: 10px; height: 10px; border-radius: 2px; }
+    .dot-add { background: #bbf7d0; border: 1px solid #86efac; }
+    .dot-rem { background: #fecaca; border: 1px solid #fca5a5; }
+    .dot-unc { background: #e5e7eb; border: 1px solid #d1d5db; }
+  </style>
+</head>
+<body>
+
+  <h1>jsdiff Demo</h1>
+  <p class="subtitle">Compare two texts and see the differences highlighted in real time.</p>
+
+  <div class="inputs">
+    <div>
+      <label for="original">Original text</label>
+      <textarea id="original" spellcheck="false">The quick brown fox jumps over the lazy dog.
+Pack my box with five dozen liquor jugs.</textarea>
+    </div>
+    <div>
+      <label for="revised">Revised text</label>
+      <textarea id="revised" spellcheck="false">The quick brown fox leaps over the sleepy cat.
+Pack my bag with half a dozen liquor jugs.</textarea>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div>
+      <label for="mode" style="display:inline; margin-right:0.5rem;">Diff mode:</label>
+      <select id="mode">
+        <option value="chars">Characters</option>
+        <option value="words" selected>Words</option>
+        <option value="lines">Lines</option>
+        <option value="sentences">Sentences</option>
+      </select>
+    </div>
+    <div>
+      <label for="language" style="display:inline; margin-right:0.5rem;">Language:</label>
+      <select id="language">
+        <option value="en">English (en)</option>
+        <option value="th">Thai (th)</option>
+        <option value="zh">Chinese (zh)</option>
+      </select>
+    </div>
+    <button id="runBtn">Compute diff</button>
+  </div>
+
+  <div class="result-box">
+    <h2>Result</h2>
+    <div class="legend">
+      <span><span class="dot dot-add"></span> Added</span>
+      <span><span class="dot dot-rem"></span> Removed</span>
+      <span><span class="dot dot-unc"></span> Unchanged</span>
+    </div>
+    <div id="output"></div>
+  </div>
+
+  <script>
+    const diffFns = {
+      chars:     Diff.diffChars,
+      words:     Diff.diffWords,
+      lines:     Diff.diffLines,
+      sentences: Diff.diffSentences,
+    };
+
+    function runDiff() {
+      const original = document.getElementById('original').value;
+      const revised  = document.getElementById('revised').value;
+      const mode     = document.getElementById('mode').value;
+      const language = document.getElementById('language').value;
+      const output   = document.getElementById('output');
+
+      const options = {};
+      if (mode === 'words') {
+        options.intlSegmenter = new Intl.Segmenter(language, { granularity: 'word' });
+      }
+
+      const changes = diffFns[mode](original, revised, options);
+
+      output.textContent = '';
+      const fragment = document.createDocumentFragment();
+
+      changes.forEach(function(part) {
+        const span = document.createElement('span');
+        span.className = part.added ? 'added' : part.removed ? 'removed' : 'unchanged';
+        span.textContent = part.value;
+        fragment.appendChild(span);
+      });
+
+      output.appendChild(fragment);
+    }
+
+    document.getElementById('runBtn').addEventListener('click', runDiff);
+
+    // Auto-run on load
+    runDiff();
+  </script>
+
+</body>
+</html>
